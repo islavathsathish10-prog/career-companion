@@ -29,6 +29,7 @@ export default function AIVoiceInterview() {
   const synthRef = useRef(window.speechSynthesis);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
 
   // Scroll to bottom on new messages
   useEffect(() => {
