@@ -7,7 +7,7 @@ import { Question, UserAnswer, InterviewStage, AnsweredQuestion } from "@/types/
 import { Badge } from "@/components/ui/badge";
 
 const categoryConfig: Record<string, { icon: React.ElementType; label: string; color: string; next: InterviewStage }> = {
-  aptitude: { icon: Brain, label: "Aptitude Test", color: "text-warning", next: "technical" },
+  aptitude: { icon: Brain, label: "Aptitude Test", color: "text-warning", next: "ai-interview" },
   technical: { icon: Code, label: "Technical Test", color: "text-info", next: "hr" },
   hr: { icon: Users, label: "HR Round", color: "text-accent", next: "results" },
 };

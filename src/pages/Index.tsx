@@ -28,6 +28,7 @@ function InterviewFlow() {
         {stage === "upload" && <ResumeUpload />}
         {stage === "company-match" && <CompanyMatch />}
         {stage === "aptitude" && <InterviewRound category="aptitude" />}
+        {stage === "ai-interview" && <AIVoiceInterview />}
         {stage === "technical" && <InterviewRound category="technical" />}
         {stage === "hr" && <InterviewRound category="hr" />}
         {stage === "results" && <ResultsDashboard />}
