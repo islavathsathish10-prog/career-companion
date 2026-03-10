@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useInterview } from "@/context/InterviewContext";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User, Video, VideoOff, Chrome, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ export default function AIVoiceInterview() {
   const synthRef = useRef(window.speechSynthesis);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -252,6 +253,15 @@ export default function AIVoiceInterview() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+      {/* Chrome recommendation banner */}
+      {!isChrome && (
+        <div className="flex items-center gap-2 bg-warning/10 border border-warning/30 rounded-lg px-4 py-2.5 mb-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+          <p className="text-foreground">
+            For the best experience with <strong>speech recognition</strong> and <strong>camera</strong>, please use <strong>Google Chrome</strong>.
+          </p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
