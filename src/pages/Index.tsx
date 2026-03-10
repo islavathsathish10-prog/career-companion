@@ -4,6 +4,7 @@ import RegisterForm from "@/components/interview/RegisterForm";
 import ResumeUpload from "@/components/interview/ResumeUpload";
 import CompanyMatch from "@/components/interview/CompanyMatch";
 import InterviewRound from "@/components/interview/InterviewRound";
+import AIVoiceInterview from "@/components/interview/AIVoiceInterview";
 import ResultsDashboard from "@/components/interview/ResultsDashboard";
 import { Zap } from "lucide-react";
 
@@ -27,6 +28,7 @@ function InterviewFlow() {
         {stage === "upload" && <ResumeUpload />}
         {stage === "company-match" && <CompanyMatch />}
         {stage === "aptitude" && <InterviewRound category="aptitude" />}
+        {stage === "ai-interview" && <AIVoiceInterview />}
         {stage === "technical" && <InterviewRound category="technical" />}
         {stage === "hr" && <InterviewRound category="hr" />}
         {stage === "results" && <ResultsDashboard />}
