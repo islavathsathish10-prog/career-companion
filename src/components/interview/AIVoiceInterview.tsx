@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useInterview } from "@/context/InterviewContext";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User, Video, VideoOff, Chrome, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
