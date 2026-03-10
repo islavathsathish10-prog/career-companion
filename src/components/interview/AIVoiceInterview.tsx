@@ -253,6 +253,15 @@ export default function AIVoiceInterview() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+      {/* Chrome recommendation banner */}
+      {!isChrome && (
+        <div className="flex items-center gap-2 bg-warning/10 border border-warning/30 rounded-lg px-4 py-2.5 mb-4 text-sm">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+          <p className="text-foreground">
+            For the best experience with <strong>speech recognition</strong> and <strong>camera</strong>, please use <strong>Google Chrome</strong>.
+          </p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
