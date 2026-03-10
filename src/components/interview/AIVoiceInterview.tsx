@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useInterview } from "@/context/InterviewContext";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User } from "lucide-react";
+import { Mic, MicOff, Volume2, MessageSquare, ChevronRight, Bot, User, Video, VideoOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -22,23 +22,65 @@ export default function AIVoiceInterview() {
   const [transcript, setTranscript] = useState("");
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const recognitionRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef(window.speechSynthesis);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Start interview on mount
+  // Start camera on mount
   useEffect(() => {
-    startInterview();
+    startCamera();
     return () => {
       synthRef.current.cancel();
       recognitionRef.current?.stop();
+      stopCamera();
     };
   }, []);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setCameraOn(true);
+      setCameraReady(true);
+    } catch (err) {
+      console.error("Camera access denied:", err);
+      toast.error("Camera access is required for the live interview. Please allow camera access.");
+      setCameraReady(true); // still let them proceed
+    }
+  };
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    setCameraOn(false);
+  };
+
+  const toggleCamera = () => {
+    if (cameraOn) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  };
+
+  // Start interview once camera is ready
+  useEffect(() => {
+    if (cameraReady && messages.length === 0) {
+      startInterview();
+    }
+  }, [cameraReady]);
 
   const speakText = useCallback((text: string) => {
     return new Promise<void>((resolve) => {
@@ -46,7 +88,6 @@ export default function AIVoiceInterview() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1;
       utterance.pitch = 1;
-      // Try to get a good English voice
       const voices = synthRef.current.getVoices();
       const englishVoice = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) || voices.find(v => v.lang.startsWith("en"));
       if (englishVoice) utterance.voice = englishVoice;
@@ -135,7 +176,6 @@ export default function AIVoiceInterview() {
       setInterviewComplete(true);
     }
 
-    // Speak the response
     const cleanText = assistantText.replace("INTERVIEW_COMPLETE:", "").trim();
     await speakText(cleanText);
   }, [profile, extractedSkills, selectedCompany, speakText]);
@@ -206,19 +246,18 @@ export default function AIVoiceInterview() {
   }, [transcript, messages, streamAIResponse]);
 
   const handleProceed = () => {
+    stopCamera();
     setStage("technical");
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-accent" />
-          <h2 className="text-xl font-bold text-foreground">AI Voice Interview</h2>
-          <Badge variant="secondary" className="font-mono text-xs">
-            Q{questionCount}
-          </Badge>
+          <h2 className="text-xl font-bold text-foreground">AI Live Interview</h2>
+          <Badge variant="secondary" className="font-mono text-xs">Q{questionCount}</Badge>
         </div>
         <div className="flex items-center gap-2">
           {isSpeaking && (
@@ -234,66 +273,124 @@ export default function AIVoiceInterview() {
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="bg-card rounded-xl shadow-card glow-border mb-4 max-h-[400px] overflow-y-auto">
-        <div className="p-4 space-y-4">
-          <AnimatePresence>
-            {messages.map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-accent" />
-                  </div>
-                )}
-                <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
-                  msg.role === "user"
-                    ? "bg-primary/15 text-foreground border border-primary/20"
-                    : "bg-secondary text-secondary-foreground"
-                }`}>
-                  {msg.content}
-                </div>
-                {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+      {/* Main layout: Video + Chat side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* Video Feed */}
+        <div className="relative">
+          <div className="bg-card rounded-xl shadow-card glow-border overflow-hidden aspect-[4/3]">
+            {cameraOn ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover mirror"
+                style={{ transform: "scaleX(-1)" }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/50">
+                <VideoOff className="w-12 h-12 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">Camera is off</p>
+              </div>
+            )}
 
-          {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-accent" />
+            {/* Camera toggle */}
+            <button
+              onClick={toggleCamera}
+              className="absolute bottom-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background transition-colors"
+            >
+              {cameraOn ? <Video className="w-4 h-4 text-primary" /> : <VideoOff className="w-4 h-4 text-muted-foreground" />}
+            </button>
+
+            {/* Live indicator */}
+            {cameraOn && (
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground px-2.5 py-1 rounded-full text-xs font-bold">
+                <span className="w-2 h-2 bg-destructive-foreground rounded-full animate-pulse" />
+                LIVE
               </div>
-              <div className="bg-secondary rounded-xl px-4 py-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-              </div>
+            )}
+
+            {/* AI Avatar overlay when speaking */}
+            <AnimatePresence>
+              {isSpeaking && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute top-3 right-3 w-12 h-12 rounded-full bg-accent/20 border-2 border-accent flex items-center justify-center"
+                >
+                  <Bot className="w-6 h-6 text-accent animate-pulse" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Transcript preview below video */}
+          {isListening && transcript && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 bg-secondary/50 rounded-lg p-3 border border-border">
+              <p className="text-xs text-muted-foreground mb-1">
+                <MessageSquare className="w-3 h-3 inline mr-1" />
+                Your speech:
+              </p>
+              <p className="text-sm text-foreground">{transcript}</p>
             </motion.div>
           )}
-          <div ref={chatEndRef} />
+        </div>
+
+        {/* Chat Messages */}
+        <div className="bg-card rounded-xl shadow-card glow-border flex flex-col max-h-[400px] md:max-h-[unset]">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Conversation</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <AnimatePresence>
+              {messages.map((msg, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.role === "assistant" && (
+                    <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Bot className="w-3.5 h-3.5 text-accent" />
+                    </div>
+                  )}
+                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                    msg.role === "user"
+                      ? "bg-primary/15 text-foreground border border-primary/20"
+                      : "bg-secondary text-secondary-foreground"
+                  }`}>
+                    {msg.content}
+                  </div>
+                  {msg.role === "user" && (
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <User className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {isLoading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
+                <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+                  <Bot className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <div className="bg-secondary rounded-xl px-3 py-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
         </div>
       </div>
-
-      {/* Transcript preview */}
-      {isListening && transcript && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-secondary/50 rounded-lg p-3 mb-4 border border-border">
-          <p className="text-xs text-muted-foreground mb-1">
-            <MessageSquare className="w-3 h-3 inline mr-1" />
-            Your speech:
-          </p>
-          <p className="text-sm text-foreground">{transcript}</p>
-        </motion.div>
-      )}
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-4">
@@ -307,7 +404,7 @@ export default function AIVoiceInterview() {
                 className="bg-gradient-primary text-primary-foreground font-semibold hover:opacity-90 gap-2"
               >
                 <Mic className="w-5 h-5" />
-                Hold to Speak
+                Start Speaking
               </Button>
             ) : (
               <Button
@@ -329,10 +426,10 @@ export default function AIVoiceInterview() {
         )}
       </div>
 
-      <p className="text-center text-xs text-muted-foreground mt-4">
+      <p className="text-center text-xs text-muted-foreground mt-3">
         {interviewComplete
           ? "Great job! Your AI interview is complete."
-          : "Click the mic button, speak your answer, then click stop to send it to the AI interviewer."}
+          : "Your camera is live. Click the mic button, speak your answer, then click stop to send."}
       </p>
     </motion.div>
   );
