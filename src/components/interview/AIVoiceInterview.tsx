@@ -248,7 +248,7 @@ export default function AIVoiceInterview() {
 
   const handleProceed = () => {
     stopCamera();
-    setStage("technical");
+    setStage("hr");
   };
 
   return (
