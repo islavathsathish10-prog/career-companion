@@ -7,6 +7,7 @@ const stages: { key: InterviewStage; label: string }[] = [
   { key: "company-match", label: "Companies" },
   { key: "aptitude", label: "Aptitude" },
   { key: "technical", label: "Technical" },
+  { key: "coding", label: "Coding" },
   { key: "ai-interview", label: "AI Interview" },
   { key: "hr", label: "HR Round" },
   { key: "results", label: "Results" },
