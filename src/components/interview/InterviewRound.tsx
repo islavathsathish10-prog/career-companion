@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 
 const categoryConfig: Record<string, { icon: React.ElementType; label: string; color: string; next: InterviewStage }> = {
   aptitude: { icon: Brain, label: "Aptitude Test", color: "text-warning", next: "technical" },
-  technical: { icon: Code, label: "Technical Test", color: "text-info", next: "ai-interview" },
+  technical: { icon: Code, label: "Technical Test", color: "text-info", next: "coding" },
   hr: { icon: Users, label: "HR Round", color: "text-accent", next: "results" },
 };
 

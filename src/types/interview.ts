@@ -44,7 +44,7 @@ export interface AnsweredQuestion {
   category: string;
 }
 
-export type InterviewStage = 'register' | 'upload' | 'company-match' | 'aptitude' | 'ai-interview' | 'technical' | 'hr' | 'results';
+export type InterviewStage = 'register' | 'upload' | 'company-match' | 'aptitude' | 'technical' | 'coding' | 'ai-interview' | 'hr' | 'results';
 
 export interface Company {
   id: string;
