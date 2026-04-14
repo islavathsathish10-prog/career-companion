@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useInterview } from "@/context/InterviewContext";
 import { motion } from "framer-motion";
 import { Trophy, Target, Brain, Code, Users, AlertTriangle, CheckCircle, XCircle, RotateCcw } from "lucide-react";
@@ -15,7 +16,46 @@ function ScoreCard({ icon: Icon, label, score, color }: { icon: React.ElementTyp
 }
 
 export default function ResultsDashboard() {
-  const { result, setStage, setAnswers } = useInterview();
+  const { result, profile, selectedCompany, setStage, setAnswers } = useInterview();
+  const hasSavedResult = useRef(false);
+
+  useEffect(() => {
+    if (hasSavedResult.current || !result || !profile) return;
+    
+    const webhookUrl = import.meta.env.VITE_GOOGLE_SHEETS_WEBAPP_URL;
+    if (!webhookUrl) return;
+
+    hasSavedResult.current = true;
+    
+    const score = Math.round((result.aptitudeScore + result.technicalScore + result.hrScore) / 3);
+
+    const payload = {
+      timestamp: new Date().toISOString(),
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      college: profile.college,
+      branch: profile.branch,
+      graduationYear: profile.graduationYear,
+      company: selectedCompany || "General",
+      aptitudeScore: result.aptitudeScore,
+      technicalScore: result.technicalScore,
+      hrScore: result.hrScore,
+      overallScore: score,
+      correctAnswers: result.correctAnswers,
+      totalQuestions: result.totalQuestions,
+      accuracy: result.accuracy
+    };
+
+    fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    }).catch(err => console.error("Error saving to Google Sheets:", err));
+  }, [result, profile, selectedCompany]);
 
   if (!result) return null;
 
