@@ -96,7 +96,7 @@ export default function ResultsDashboard() {
       </div>
 
       {/* Score Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <ScoreCard icon={Brain} label="Aptitude" score={result.aptitudeScore} color="text-warning" />
         <ScoreCard icon={Code} label="Technical" score={result.technicalScore} color="text-info" />
         <ScoreCard icon={Users} label="HR Round" score={result.hrScore} color="text-accent" />

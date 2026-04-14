@@ -19,7 +19,7 @@ export default function StageIndicator({ current }: { current: InterviewStage })
   const currentIdx = stageOrder.indexOf(current);
 
   return (
-    <div className="flex items-center justify-center gap-1 py-6 px-4 overflow-x-auto">
+    <div className="flex items-center justify-start md:justify-center gap-1 py-6 px-4 overflow-x-auto">
       {stages.map((stage, i) => {
         const isCompleted = i < currentIdx;
         const isCurrent = i === currentIdx;
