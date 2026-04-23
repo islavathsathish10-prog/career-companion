@@ -15,6 +15,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview
 
 export default function AIVoiceInterview() {
   const { profile, extractedSkills, selectedCompany, setStage } = useInterview();
+  const [hasChosen, setHasChosen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -38,13 +39,14 @@ export default function AIVoiceInterview() {
 
   // Start camera on mount
   useEffect(() => {
+    if (!hasChosen) return;
     startCamera();
     return () => {
       synthRef.current.cancel();
       recognitionRef.current?.stop();
       stopCamera();
     };
-  }, []);
+  }, [hasChosen]);
 
   const startCamera = async () => {
     try {
@@ -250,6 +252,50 @@ export default function AIVoiceInterview() {
     stopCamera();
     setStage("hr");
   };
+
+  const handleSkip = () => {
+    toast.info("AI interview skipped. Moving to HR round.");
+    setStage("hr");
+  };
+
+  if (!hasChosen) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+        <div className="bg-card rounded-xl shadow-card glow-border p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+            <Bot className="w-8 h-8 text-accent" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">AI Live Interview</h2>
+          <p className="text-muted-foreground mb-6">
+            This round simulates a real interview using your camera, microphone, and an AI interviewer.
+            You can choose to take it now or skip and continue to the next round.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={() => setHasChosen(true)}
+              size="lg"
+              className="bg-gradient-primary text-primary-foreground font-semibold hover:opacity-90 gap-2"
+            >
+              <Mic className="w-5 h-5" />
+              Take AI Interview
+            </Button>
+            <Button
+              onClick={handleSkip}
+              size="lg"
+              variant="outline"
+              className="gap-2"
+            >
+              Skip for Now
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            Tip: Use Google Chrome for the best speech & camera experience.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
