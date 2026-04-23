@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, GraduationCap, BookOpen, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function RegisterForm() {
   const { setProfile, setStage } = useInterview();
@@ -12,6 +14,7 @@ export default function RegisterForm() {
     name: "", email: "", phone: "", password: "", college: "", branch: "", graduationYear: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -26,11 +29,36 @@ export default function RegisterForm() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("student_registrations").insert({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password_hash: form.password,
+        college: form.college,
+        branch: form.branch,
+        graduation_year: form.graduationYear,
+      });
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("This email is already registered");
+        } else {
+          toast.error(error.message || "Registration failed");
+        }
+        setLoading(false);
+        return;
+      }
+      toast.success("Registration saved!");
       setProfile(form);
       setStage("upload");
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,8 +97,8 @@ export default function RegisterForm() {
           </motion.div>
           ))}
         </div>
-        <Button type="submit" className="w-full mt-6 bg-gradient-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity">
-          Continue →
+        <Button type="submit" disabled={loading} className="w-full mt-6 bg-gradient-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity">
+          {loading ? "Saving..." : "Continue →"}
         </Button>
       </form>
     </motion.div>
